@@ -2627,7 +2627,7 @@ function ihsLine(labels, series, opt){
 function barLineChart(labels, bars, line, ctx){
   ctx=ctx||{}; const volName=ctx.volName||'Brands volume', lineName=ctx.lineName||'MSI share';
   const n=labels.length, many=n>6;
-  const W= many?820:380, H=220,L=42,R=36,T=16,B=46, iw=W-L-R, ih=H-T-B;
+  const W= many?820:380, H=many?322:220,L=42,R=36,T=16,B=46, iw=W-L-R, ih=H-T-B;
   const mxB=Math.max(1,...bars); const bw=iw/n*(many?0.62:0.55);
   const mxL=Math.max(...line.filter(v=>v!=null),0.1), mnL=0;
   const x=i=> L + (i+0.5)/n*iw;
