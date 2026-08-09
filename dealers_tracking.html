@@ -294,6 +294,12 @@ body.rail-collapsed .collapse-btn svg{transform:rotate(180deg);}
 /* ---------- IHS boxes ---------- */
 .ihs-svg{width:100%; height:auto; display:block; overflow:visible;}
 .ihs-leg{display:flex; flex-wrap:wrap; gap:12px; margin:2px 0 10px; font-size:9.5px; color:var(--ink-2); font-weight:600;}
+/* chart-eq: forces equal-height chart cards in a row to have their SVG fill the remaining space
+   (after title+legend) instead of floating with mismatched offsets/sizes between cards. */
+.chart-eq{display:flex; flex-direction:column;}
+.chart-eq > div:last-child{flex:1; display:flex; flex-direction:column; min-height:0;}
+.chart-eq .ihs-leg{flex:0 0 auto;}
+.chart-eq .ihs-svg{flex:1; width:100%; height:100%;}
 .ihs-leg span{display:flex; align-items:center; gap:5px;}
 .ihs-leg i{width:10px; height:10px; border-radius:3px; display:block;}
 .hb{display:flex; flex-direction:column; gap:9px; padding:4px 2px;}
@@ -740,12 +746,12 @@ body.booted .section:nth-of-type(n+5){transition-delay:.2s;}
   <div class="section">
     <div class="sec-head"><h2>Weekly pulse — IHS</h2><span class="hint" id="ihsWkHint">MSI sell-out from Weekly Sales · Key-Dealer volume &amp; MSI share + per-dealer trend from RAW · IHS</span></div>
     <div class="charts charts-2">
-      <div class="chart"><div class="chart-h"><div class="chart-t">MSI — weekly sell-out</div></div><div id="chMsiWk"></div></div>
-      <div class="chart"><div class="chart-h"><div class="chart-t" id="chKeyWkTitle">Key Dealers — weekly volume &amp; MSI share</div></div><div id="chKeyWk"></div></div>
+      <div class="chart chart-eq"><div class="chart-h"><div class="chart-t">MSI — weekly sell-out</div></div><div id="chMsiWk"></div></div>
+      <div class="chart chart-eq"><div class="chart-h"><div class="chart-t" id="chKeyWkTitle">Key Dealers — weekly volume &amp; MSI share</div></div><div id="chKeyWk"></div></div>
     </div>
     <div class="charts charts-2">
-      <div class="chart"><div class="chart-h"><div class="chart-t">Dealer volume — by week</div></div><div id="chDealerWk"></div></div>
-      <div class="chart"><div class="chart-h"><div class="chart-t">Brand share — weekly trend</div></div><div id="chBrandTrend"></div></div>
+      <div class="chart chart-eq"><div class="chart-h"><div class="chart-t">Dealer volume — by week</div></div><div id="chDealerWk"></div></div>
+      <div class="chart chart-eq"><div class="chart-h"><div class="chart-t">Brand share — weekly trend</div></div><div id="chBrandTrend"></div></div>
     </div>
   </div>
 
@@ -2609,7 +2615,7 @@ function ihsLine(labels, series, opt){
       end=`<circle cx="${ex}" cy="${ey}" r="5" fill="${s.color}" opacity=".16"/><circle cx="${ex}" cy="${ey}" r="2.8" fill="${s.color}"/><circle cx="${ex}" cy="${ey}" r="2.8" fill="none" stroke="${cssVar('--panel')}" stroke-width="1"/>`; }
     const vlab=(single&&n<=6)?cv.map((v,i)=> v==null?'':`<text x="${x(i).toFixed(1)}" y="${(y(v)-9).toFixed(1)}" text-anchor="middle" font-size="8.5" font-style="italic" fill="${s.color}" font-family="var(--mono)">${opt.ptFmt?opt.ptFmt(v):pInt(v)}</text>`).join(''):'';
     return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${dimmed?1:1.8}" stroke-linejoin="round" stroke-linecap="round" opacity="${dimmed?.28:1}"/>${end}${vlab}`; }).join('');
-  const leg=opt.legend===false?'':`<div class="ihs-leg">${series.map(s=>`<span${s.dim?' style="opacity:.4"':''}><i style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>`;
+  const leg=opt.legend===false?`<div class="ihs-leg" style="visibility:hidden">&nbsp;</div>`:`<div class="ihs-leg">${series.map(s=>`<span${s.dim?' style="opacity:.4"':''}><i style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>`;
   // hover slots — one per x; tooltip lists every series at that week, biggest first
   const fmtV=v=> v==null?'—':(opt.tipFmt?opt.tipFmt(v):(opt.yFmt?opt.yFmt(v):pInt(v)));
   const slots=labels.map((l,i)=>{
