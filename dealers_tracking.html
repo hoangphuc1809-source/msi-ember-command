@@ -804,7 +804,7 @@ body.booted .section:nth-of-type(n+5){transition-delay:.2s;}
 
 <div class="toast" id="toast"></div>
 <script>
-const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxti4DHFkii-KBvBFkUal0Qy0wDQVX_v6HCiIl_-4lGrrZRinRQRVeNHRb11FBJz_Nc9Q/exec';
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxwmIZEumnz1VZbBKQDFL_SsZDJ3y989x932UdcJf44PnTCu9QHu4hynKCvtT5h3LX2aQ/exec';
 const ACCESS_KEY = 'GML1fCMGb38UcC5uKbHTY0H8AnL1-tCh';
 const CACHE_M = 'msi_dealers_monthly_v2';
 const CACHE_W = 'msi_dealers_weekly_v2';
@@ -908,11 +908,18 @@ function populateYears(){
 function banner(type, msg){ const el=$('banner'); if(!type){ el.className='banner'; el.innerHTML=''; return; } el.className='banner '+type; el.innerHTML='<div>'+msg+'</div>'; }
 function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none', 8000); }
 
+/* ---------- compact format: GAS returns {fields:[...],rows:[[...],...],compact:true} to stay under 500KB limit ---------- */
+function unpackCompact(j){
+  if(!j||!j.compact||!j.fields) return j;
+  j.rows=j.rows.map(r=>{ const o={}; j.fields.forEach((f,i)=>{o[f]=r[i];}); return o; });
+  delete j.compact; delete j.fields; return j;
+}
+
 /* ---------- fetch (cache-buster + no-store, learned the hard way) ---------- */
 async function fetchView(view, year, quarter){
   const url = WEBAPP_URL + '?view=' + view + '&year=' + encodeURIComponent(year) + '&quarter=' + encodeURIComponent(quarter) + '&key=' + encodeURIComponent(ACCESS_KEY) + '&_ts=' + Date.now();
   const res = await fetch(url, { cache:'no-store' });
-  return res.json();
+  return unpackCompact(await res.json());
 }
 async function loadMonthly(){
   const periods=periodsList();
@@ -3228,7 +3235,7 @@ async function checkOneSource(def,year,quarter){
   try{
     let j;
     if(def.per) j=await fetchView(def.view,year,quarter);
-    else { const r=await fetch(WEBAPP_URL+'?view='+def.view+'&key='+encodeURIComponent(ACCESS_KEY)+'&_ts='+Date.now(),{cache:'no-store'}); j=await r.json(); }
+    else { const r=await fetch(WEBAPP_URL+'?view='+def.view+'&key='+encodeURIComponent(ACCESS_KEY)+'&_ts='+Date.now(),{cache:'no-store'}); j=unpackCompact(await r.json()); }
     if(j && j.ok && Array.isArray(j.rows)) return {state:j.rows.length?'live':'empty', rows:j.rows.length, latest:j.rows.length?(def.latest(j.rows)||''):''};
     return {state:'err', rows:0, latest:'', msg:(j&&j.error)||'no ok flag'};
   }catch(e){ return {state:'err', rows:0, latest:'', msg:String((e&&e.message)||e)}; }
