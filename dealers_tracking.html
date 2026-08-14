@@ -567,6 +567,25 @@ body.booted .section:nth-of-type(n+5){transition-delay:.2s;}
 .src-load{background:var(--inset); color:var(--ink-3);}
 .src-foot{font-size:10.5px; color:var(--ink-3); line-height:1.55; margin-top:14px; padding-top:12px; border-top:1px solid var(--rule);}
 .src-foot b{color:var(--ink-2);}
+
+/* ---------- Dealers Detail ---------- */
+.dt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:14px;}
+.dt-card{border:1px solid var(--line);border-radius:10px;background:var(--card);overflow:hidden;}
+.dt-h{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;}
+.dt-scroll{max-height:340px;overflow:auto;}
+.dt-tbl{width:100%;border-collapse:collapse;font-size:11px;}
+.dt-tbl th{position:sticky;top:0;background:var(--card);z-index:1;padding:6px 7px;text-align:right;font-weight:600;color:var(--ink-3);white-space:nowrap;border-bottom:1px solid var(--line);}
+.dt-tbl td{padding:5px 7px;text-align:right;white-space:nowrap;border-bottom:1px solid rgba(128,128,128,.12);}
+.dt-tbl th.l,.dt-tbl td.l{text-align:left;max-width:210px;overflow:hidden;text-overflow:ellipsis;}
+.dt-tbl th.sep,.dt-tbl td.sep{border-left:1px dashed var(--line);}
+.dt-tbl tfoot td{font-weight:700;border-top:1px solid var(--line);}
+.dt-row{cursor:pointer;}
+.dt-row:hover{background:rgba(128,128,128,.09);}
+.dt-row.on{background:rgba(204,0,0,.10);box-shadow:inset 2px 0 0 var(--msi);}
+.dt-row.dim{opacity:.42;}
+.dt-tbl td.hl{font-weight:600;}
+.dt-pos{color:var(--pos);} .dt-neg{color:var(--neg);} .dt-mut{color:var(--ink-4);}
+.dt-warn{color:var(--warn,#D97706);font-size:10px;}
 </style>
 </head>
 <body>
@@ -582,6 +601,7 @@ body.booted .section:nth-of-type(n+5){transition-delay:.2s;}
     <button class="vtab on" data-tab="monthly"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg><span class="lbl">Target Tracking</span></button>
     <button class="vtab" data-tab="dealers"><svg viewBox="0 0 24 24"><path d="M3.5 9.5 5 4h14l1.5 5.5"/><path d="M3.5 9.5v0a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 12v8h14v-8"/><path d="M10 20v-5h4v5"/></svg><span class="lbl">Dealer Detail</span></button>
     <button class="vtab" data-tab="mkt"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><rect x="5" y="12" width="3.4" height="8" rx="1"/><rect x="10.3" y="7" width="3.4" height="13" rx="1"/><rect x="15.6" y="3.5" width="3.4" height="16.5" rx="1"/></svg><span class="lbl">Market Share</span></button>
+    <button class="vtab" data-tab="detail"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg><span class="lbl">Dealers Detail</span></button>
   </nav>
   <div class="sb-foot">
     <button class="sb-btn" id="reloadBtn"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-.9 4.6"/><path d="M20 4v5h-5"/></svg><span>Reload data</span></button>
@@ -739,6 +759,14 @@ body.booted .section:nth-of-type(n+5){transition-delay:.2s;}
   </div>
 </div>
 
+<!-- ===================== DEALERS DETAIL (9 breakdown, chuan Looker) ===================== -->
+<div id="detailView" style="display:none">
+  <div class="section">
+    <div class="sec-head"><h2>Dealers detail</h2><span class="hint" id="detailStatus"></span></div>
+    <div id="detailGrid" class="dt-grid"></div>
+  </div>
+</div>
+
 <!-- ===================== DEALERS TRACKING (market share) ===================== -->
 <div id="mktView" style="display:none">
 
@@ -823,7 +851,8 @@ function safeCache(key, value){
 let RAW_M = [], RAW_W = [];
 // customer + sku la 2 chieu cross-filter moi. sku uses a DYNAMIC key bound to the active group-by radio
 // dang chon, nen doi radio phai xoa filter cu de khong de lai filter mo coi.
-let filters = { sales_rep:[], channel_type:[], disty:[], series_group:[], customer:[] };
+let filters = { sales_rep:[], channel_type:[], disty:[], series_group:[], customer:[],
+  marketing_sku:[], segment1:[], cpu_segment:[], gpu:[], province:[], vn_region:[], high_end:[], price_segment:[] };
 /* multi-select filter helpers — every attribute filter is now an array ([] = All) */
 function fArr(f){ const v=filters[f]; return Array.isArray(v)?v:(v==null||v===''?[]:[v]); }
 function fActive(f){ return fArr(f).length>0; }
@@ -1980,6 +2009,7 @@ function renderApplied(){
 /* ---------- orchestration ---------- */
 function renderAll(){
   renderApplied();
+  if(currentTab==='detail' && window.MSIDetail) MSIDetail.render();
   if(DT_MKT) rebuildMkt();   // re-slice the IHS grid so the mkt tab + cockpit follow Rep/Channel/Series
   // one consistent set of tables — realized figures from the monthly feed,
   // plan figures from target_tracking. Render as soon as either feed is present.
@@ -3143,6 +3173,8 @@ function switchTab(tab){
   $('monthlyView').style.display = tab==='monthly' ? '' : 'none';
   $('dealersView').style.display = tab==='dealers' ? '' : 'none';
   $('mktView').style.display = tab==='mkt' ? '' : 'none';
+  $('detailView').style.display = tab==='detail' ? '' : 'none';
+  if(tab==='detail' && window.MSIDetail) MSIDetail.init();
   if(tab==='dealers') renderDealersTab();
   if(tab==='mkt') renderMktTab();
   renderCockpit();   // scorecard row is tab-aware (mkt tab shows the DT feed)
@@ -3332,5 +3364,6 @@ initSources();         // data-source health pill + panel (auto-check on load)
 })();
 
 </script>
+<script src="detail.js?v=1"></script>
 </body>
 </html>
