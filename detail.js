@@ -105,7 +105,7 @@
   function build(field) {
     var acc = {}, mrows = monthlyRows();
     function slot(k) {
-      if (!acc[k]) acc[k] = { key: k, si: 0, so: 0, soh: 0, siLY: 0, cus: {}, sku: {}, w1: 0, w2: 0, w3: 0, w4: 0 };
+      if (!acc[k]) acc[k] = { key: k, si: 0, so: 0, soh: 0, sohW: 0, siLY: 0, cus: {}, sku: {}, w1: 0, w2: 0, w3: 0, w4: 0 };
       return acc[k];
     }
     for (var i = 0; i < mrows.length; i++) {
@@ -136,7 +136,8 @@
       var idx = last.indexOf(wl);
       if (idx < 0) continue;
       var v = num(w.sell_out);
-      if (idx === 3) b.w1 += v; else if (idx === 2) b.w2 += v; else if (idx === 1) b.w3 += v; else b.w4 += v;
+      if (idx === 3) { b.w1 += v; b.sohW += num(w.on_hand); }   // tuan moi nhat -> ton kho moi nhat
+      else if (idx === 2) b.w2 += v; else if (idx === 1) b.w3 += v; else b.w4 += v;
     }
 
     var out = [], totSo = 0;
@@ -144,7 +145,12 @@
     for (var m = 0; m < out.length; m++) {
       var o = out[m];
       o.share = totSo ? o.so / totSo : 0;
-      o.woi = o.so ? (o.soh / (o.so / 13)) : null;   // 13 tuan/quy
+      // WOI = ton kho MOI NHAT / trung binh tuan cua 4 TUAN gan nhat.
+      // Tu so uu tien on_hand cua tuan moi nhat (weekly feed); chua co thi lui ve SOH thang.
+      var avg4 = (o.w1 + o.w2 + o.w3 + o.w4) / 4;
+      var stock = o.sohW || o.soh;
+      o.woi = avg4 > 0 ? (stock / avg4) : null;
+      o.stock = stock;
       o.wow = o.w2 ? (o.w1 - o.w2) / o.w2 : null;
       o.nCus = Object.keys(o.cus).length;
       o.nSku = Object.keys(o.sku).length;
@@ -190,10 +196,15 @@
         '<td class="sep">' + (dim.count === 'sku' ? r.nSku : r.nCus) + '</td></tr>';
     }
 
-    var t = { so: 0, si: 0, soh: 0, w1: 0, w2: 0, w3: 0 };
-    for (var j = 0; j < rows.length; j++) { t.so += rows[j].so; t.si += rows[j].si; t.soh += rows[j].soh; t.w1 += rows[j].w1; t.w2 += rows[j].w2; t.w3 += rows[j].w3; }
+    var t = { so: 0, si: 0, soh: 0, stock: 0, w1: 0, w2: 0, w3: 0, w4: 0 };
+    for (var j = 0; j < rows.length; j++) {
+      t.so += rows[j].so; t.si += rows[j].si; t.soh += rows[j].soh; t.stock += (rows[j].stock || 0);
+      t.w1 += rows[j].w1; t.w2 += rows[j].w2; t.w3 += rows[j].w3; t.w4 += rows[j].w4;
+    }
+    var tAvg4 = (t.w1 + t.w2 + t.w3 + t.w4) / 4;
+    var tWoi = tAvg4 > 0 ? (t.stock / tAvg4) : null;
     h += '</tbody><tfoot><tr><td class="l">Grand total</td><td class="hl">100%</td><td>' + fmt(t.so) + '</td><td>' + fmt(t.si) +
-      '</td><td></td><td>' + fmt(t.soh) + '</td><td>' + (t.so ? (t.soh / (t.so / 13)).toFixed(0) : '') + '</td>' +
+      '</td><td></td><td>' + fmt(t.soh) + '</td><td>' + (tWoi == null ? '' : tWoi.toFixed(0)) + '</td>' +
       '<td class="sep">' + (noWeekly ? '' : fmt(t.w3)) + '</td><td>' + (noWeekly ? '' : fmt(t.w2)) + '</td><td>' + (noWeekly ? '' : fmt(t.w1)) + '</td>' +
       '<td>' + (noWeekly ? '' : signed(ratio(t.w1, t.w2))) + '</td><td class="sep"></td></tr></tfoot></table></div></div>';
     return h;
