@@ -76,6 +76,25 @@
   }
   function ratio(a, b) { return (!b) ? null : (a - b) / Math.abs(b); }
 
+  // S/O shared: to nen xanh dam dan theo ty trong, chuan hoa theo dong lon nhat
+  // trong bang -> bang nao cung doc duoc, khong bi nhat het khi co nhieu dong nho.
+  function shareCell(v, max) {
+    if (v === null || v === undefined || isNaN(v) || v <= 0) return '<span class="dt-mut">—</span>';
+    var a = max > 0 ? Math.min(v / max, 1) : 0;
+    var alpha = (0.10 + 0.42 * a).toFixed(3);
+    var strong = a > 0.55;
+    return '<span class="dt-share' + (strong ? ' str' : '') + '" style="background:rgba(5,150,105,' + alpha + ')">' +
+      (v * 100).toFixed(1) + '%</span>';
+  }
+
+  // WOI theo cong thuc 4 tuan: <=13 tuan (~1 quy) tot, <=26 (~2 quy) canh bao,
+  // tren nua la hang nam lau. Duoi 2 tuan la nguy co het hang.
+  function woiCell(v) {
+    if (v === null || v === undefined || isNaN(v)) return '<span class="dt-mut">—</span>';
+    var c = v < 2 ? 'wb-low' : v <= 13 ? 'wb-ok' : v <= 26 ? 'wb-warn' : 'wb-bad';
+    return '<span class="dt-woi ' + c + '">' + v.toFixed(0) + '</span>';
+  }
+
   /* ---------- nguon du lieu ---------- */
 
   // Monthly: dung RAW_M cua trang chinh, da ap filter san bang matchesFilters.
@@ -239,6 +258,8 @@
     var wk = d.weeks, rows = d.rows;
     sortRows(rows, dim);
     var shown = rows.slice(0, topN);
+    var maxShare = 0;
+    for (var mi = 0; mi < shown.length; mi++) { if (shown[mi].share > maxShare) maxShare = shown[mi].share; }
     var cntLbl = dim.count === 'sku' ? 'SKUs' : 'Active Cus.';
     var noWeekly = dim.weeklyNeedsEnriched && wkState !== 'ok';
 
@@ -258,12 +279,12 @@
       var dim2 = fActive(dim.field) && !sel;
       h += '<tr class="dt-row' + (sel ? ' on' : '') + (dim2 ? ' dim' : '') + '" data-f="' + esc(dim.field) + '" data-v="' + encodeURIComponent(r.key) + '">' +
         '<td class="l">' + esc(r.key) + '</td>' +
-        '<td class="hl">' + pct(r.share) + '</td>' +
+        '<td>' + shareCell(r.share, maxShare) + '</td>' +
         '<td>' + fmt(r.so) + '</td>' +
         '<td>' + fmt(r.si) + '</td>' +
         '<td>' + signed(r.siYoY === undefined ? null : r.siYoY) + '</td>' +
         '<td>' + fmt(r.soh) + '</td>' +
-        '<td>' + (r.woi == null ? '' : r.woi.toFixed(0)) + '</td>' +
+        '<td>' + woiCell(r.woi) + '</td>' +
         '<td class="sep">' + (noWeekly ? '<span class="dt-mut">—</span>' : fmt(r.w3)) + '</td>' +
         '<td>' + (noWeekly ? '' : fmt(r.w2)) + '</td>' +
         '<td>' + (noWeekly ? '' : fmt(r.w1)) + '</td>' +
@@ -284,8 +305,8 @@
     var tYoY = t.siLY ? (t.si - t.siLY) / Math.abs(t.siLY) : null;
     var tAvg4 = (t.w1 + t.w2 + t.w3 + t.w4) / 4;
     var tWoi = tAvg4 > 0 ? (t.stock / tAvg4) : null;
-    h += '</tbody><tfoot><tr><td class="l">Grand total</td><td class="hl">100%</td><td>' + fmt(t.so) + '</td><td>' + fmt(t.si) +
-      '</td><td>' + signed(tYoY) + '</td><td>' + fmt(t.soh) + '</td><td>' + (tWoi == null ? '' : tWoi.toFixed(0)) + '</td>' +
+    h += '</tbody><tfoot><tr><td class="l">Grand total</td><td>' + shareCell(1, 1) + '</td><td>' + fmt(t.so) + '</td><td>' + fmt(t.si) +
+      '</td><td>' + signed(tYoY) + '</td><td>' + fmt(t.soh) + '</td><td>' + woiCell(tWoi) + '</td>' +
       '<td class="sep">' + (noWeekly ? '' : fmt(t.w3)) + '</td><td>' + (noWeekly ? '' : fmt(t.w2)) + '</td><td>' + (noWeekly ? '' : fmt(t.w1)) + '</td>' +
       '<td>' + (noWeekly ? '' : signed(ratio(t.w1, t.w2))) + '</td><td class="sep">' + tCount + '</td></tr></tfoot></table></div></div>';
     return h;
