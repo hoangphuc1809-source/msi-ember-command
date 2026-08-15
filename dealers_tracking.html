@@ -1027,10 +1027,39 @@ function anyFilterActive(){ return Object.keys(filters).some(fActive) || (skuFil
    hoac chua chot du so. Cache theo dimKey, xoa moi lan filter doi. */
 let _woi4Cache = {};
 function clearWoi4Cache(){ _woi4Cache = {}; }
+function woi4Overall(fallbackSoh){
+  const src = (typeof RAW_W!=='undefined' && Array.isArray(RAW_W)) ? RAW_W : [];
+  const rows = (typeof applyFilters==='function') ? applyFilters(src) : src;
+  if(!rows.length) return null;
+  const wtot={};
+  for(const r of rows){ if(r.week_label) wtot[r.week_label]=(wtot[r.week_label]||0)+(r.sell_out||0); }
+  const wks=Object.keys(wtot).filter(k=>wtot[k]>0).sort().slice(-4);
+  if(!wks.length) return null;
+  const latest=wks[wks.length-1];
+  let so4=0, stock=0;
+  for(const r of rows){ if(!wks.includes(r.week_label)) continue; so4+=(r.sell_out||0); if(r.week_label===latest) stock+=(r.on_hand||0); }
+  const st = stock || fallbackSoh || 0;
+  return (so4>0 && st) ? st/(so4/4) : null;
+}
+function woi4Cust(cust, fallbackSoh){
+  const src = (typeof RAW_W!=='undefined' && Array.isArray(RAW_W)) ? RAW_W : [];
+  const rows = src.filter(r=>r.customer===cust);
+  if(!rows.length) return null;
+  const wtot={};
+  for(const r of rows){ if(r.week_label) wtot[r.week_label]=(wtot[r.week_label]||0)+(r.sell_out||0); }
+  const wks=Object.keys(wtot).filter(k=>wtot[k]>0).sort().slice(-4);
+  if(!wks.length) return null;
+  const latest=wks[wks.length-1];
+  let so4=0, stock=0;
+  for(const r of rows){ if(!wks.includes(r.week_label)) continue; so4+=(r.sell_out||0); if(r.week_label===latest) stock+=(r.on_hand||0); }
+  const st = stock || fallbackSoh || 0;
+  return (so4>0 && st) ? st/(so4/4) : null;
+}
 function woi4Map(dimKey){
   if(_woi4Cache[dimKey]) return _woi4Cache[dimKey];
   const m = new Map();
-  const rows = (typeof RAW_W!=='undefined' && Array.isArray(RAW_W)) ? RAW_W : [];
+  const src = (typeof RAW_W!=='undefined' && Array.isArray(RAW_W)) ? RAW_W : [];
+  const rows = (typeof applyFilters==='function') ? applyFilters(src, dimKey) : src;
   if(!rows.length){ _woi4Cache[dimKey]=m; return m; }
   // Bo tuan dang chay (chua co sell-out) khoi mau so, neu khong WOI bi thoi phong.
   const wtot = {};
@@ -2134,7 +2163,7 @@ function aggPlan(rows, dimKey){
   }
   return m;
 }
-function mergeRow(key, r, p){
+function mergeRow(key, r, p, dimKey){
   r=r||{sell_in:0,sell_out:0,soh:0,dgw:0,vsc:0,spc:0,oth:0,customers:new Set(),active:new Set()};
   p=p||{target:0,linTgt:0,linAct:0,ly:0};
   return {
@@ -2144,7 +2173,8 @@ function mergeRow(key, r, p){
     hr:  p.target>0 ? r.sell_in/p.target*100 : null,
     lin: p.linTgt>0 ? p.linAct/p.linTgt*100 : null,
     yoy: p.ly>0     ? (r.sell_in-p.ly)/p.ly*100 : null,
-    woi: r.sell_out>0 ? r.soh/(r.sell_out/13) : null
+    // dimKey='__all__' la dong Total -> dung WOI toan cuc, khong tra map theo key
+    woi: (dimKey==='__all__') ? woi4Overall(r.soh) : woi4(dimKey||'customer', key, r.soh)
   };
 }
 /* merged per-dimension rows for the CURRENT quarter, filter-aware (self-excluding) */
@@ -2152,7 +2182,7 @@ function aggTarget(_ignore, dimKey, except){
   const real = aggReal(applyFilters(RAW_M, except==='customer'?'customer':except), dimKey);
   const plan = aggPlan(tgtCurrentQuarter(except), dimKey);
   const keys = new Set([...real.keys(), ...plan.keys()]);
-  return [...keys].map(k=>mergeRow(k, real.get(k), plan.get(k)));
+  return [...keys].map(k=>mergeRow(k, real.get(k), plan.get(k), dimKey));
 }
 function totalsTarget(_ignore, except){
   const real = aggReal(applyFilters(RAW_M, except==='customer'?'customer':except), '__all__');
@@ -2162,7 +2192,7 @@ function totalsTarget(_ignore, except){
   for(const g of real.values()){ rAll.sell_in+=g.sell_in; rAll.sell_out+=g.sell_out; rAll.soh+=g.soh; rAll.dgw+=g.dgw; rAll.vsc+=g.vsc; rAll.spc+=g.spc; rAll.oth+=g.oth; g.customers.forEach(c=>rAll.customers.add(c)); g.active.forEach(c=>rAll.active.add(c)); }
   let pAll={target:0,linTgt:0,linAct:0,ly:0};
   for(const g of plan.values()){ pAll.target+=g.target; pAll.linTgt+=g.linTgt; pAll.linAct+=g.linAct; pAll.ly+=g.ly; }
-  return mergeRow('__total__', rAll, pAll);
+  return mergeRow('__total__', rAll, pAll, '__all__');
 }
 const fmtPctV = v => (v===null||isNaN(v)||v===0)?'':v.toFixed(1)+'%';
 function hrCell(v){ if(v===null||v===0) return ''; const c=v>=100?'v-pos':v>=60?'v-warn':'v-neg'; return `<span class="${c}">${v.toFixed(1)}%</span>`; }
@@ -3100,7 +3130,7 @@ function dealerTotals(cust){
   const y=activeYear(), q=activeQuarter();
   if(TGT_ROWS) for(const r of TGT_ROWS){ if(r.year_label===y && r.quarter_label===q && (r.customer||'')===cust){
     target+=tNum(r.dealers_target); ly+=tNum(r.sell_in_last_year); linTgt+=tNum(r.linearity_target); linAct+=tNum(r.sell_in_linearity_actual); } }
-  return {si,so,soh,target, hr:target>0?si/target*100:null, yoy:ly>0?(si-ly)/ly*100:null, lin:linTgt>0?linAct/linTgt*100:null, woi:so>0?soh/(so/13):null};
+  return {si,so,soh,target, hr:target>0?si/target*100:null, yoy:ly>0?(si-ly)/ly*100:null, lin:linTgt>0?linAct/linTgt*100:null, woi:woi4Cust(cust, soh)};
 }
 function dealerSeriesRows(cust){
   const m=new Map();
