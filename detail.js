@@ -87,11 +87,23 @@
     render();
   }
 
+  // Cac thang dang co so o nam nay, dang 'M07' -> dung de cat LY cho cung ky.
+  function currentMonthSet() {
+    var s = {}, rows = monthlyRows();
+    for (var i = 0; i < rows.length; i++) {
+      var ml = rows[i].month_label;
+      if (ml) s[String(ml).slice(-3)] = 1;
+    }
+    return s;
+  }
+
   function lySellIn(field) {
     var m = {};
     if (!LY) return m;
+    var months = currentMonthSet();
     for (var i = 0; i < LY.length; i++) {
       var r = LY[i];
+      if (r.month_label && !months[String(r.month_label).slice(-3)]) continue;
       if (!passes(r, field)) continue;
       var k = r[field];
       if (k === null || k === undefined || k === '' || k === '\u2014') k = '(Unassigned)';
@@ -145,7 +157,7 @@
       var a = slot(k);
       a.si += num(r.sell_in); a.so += num(r.sell_out);
       if (r.is_soh_month) a.soh += num(r.on_hand);
-      if (r.customer && r.customer_active_flag) a.cus[r.customer] = 1;
+      if (r.customer && num(r.sell_in) > 0) a.cus[r.customer] = 1;
       if (r.marketing_sku) a.sku[r.marketing_sku] = 1;
     }
 
