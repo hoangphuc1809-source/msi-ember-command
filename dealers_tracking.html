@@ -1021,6 +1021,48 @@ function applyFilters(rows, except){
 }
 function anyFilterActive(){ return Object.keys(filters).some(fActive) || (skuFilter.dim && skuFilter.key!==null) || presetActive().length>0; }
 
+/* ---------- WOI: ton kho moi nhat / trung binh tuan cua 4 TUAN gan nhat ----------
+   Phuc chot 14/08/2026. Looker dang dung SOH / sell-out TUAN CUOI (ra 41);
+   cong thuc nay dung trung binh 4 tuan nen on dinh hon khi tuan cuoi trung le
+   hoac chua chot du so. Cache theo dimKey, xoa moi lan filter doi. */
+let _woi4Cache = {};
+function clearWoi4Cache(){ _woi4Cache = {}; }
+function woi4Map(dimKey){
+  if(_woi4Cache[dimKey]) return _woi4Cache[dimKey];
+  const m = new Map();
+  const rows = (typeof RAW_W!=='undefined' && Array.isArray(RAW_W)) ? RAW_W : [];
+  if(!rows.length){ _woi4Cache[dimKey]=m; return m; }
+  const wks = [...new Set(rows.map(r=>r.week_label).filter(Boolean))].sort();
+  const last4 = wks.slice(-4);
+  const latest = last4[last4.length-1];
+  if(!last4.length){ _woi4Cache[dimKey]=m; return m; }
+  for(const r of rows){
+    if(!last4.includes(r.week_label)) continue;
+    const k = r[dimKey];
+    if(k===undefined) continue;
+    if(!m.has(k)) m.set(k,{so4:0, stock:0});
+    const g = m.get(k);
+    g.so4 += (r.sell_out||0);
+    if(r.week_label===latest) g.stock += (r.on_hand||0);
+  }
+  _woi4Cache[dimKey]=m;
+  return m;
+}
+function woi4(dimKey, key, fallbackSoh){
+  const g = woi4Map(dimKey).get(key);
+  if(!g || !g.so4) return null;
+  const stock = g.stock || fallbackSoh || 0;
+  if(!stock) return null;
+  return stock / (g.so4/4);
+}
+function woi4Total(dimKey, fallbackSoh){
+  let so4=0, stock=0;
+  for(const g of woi4Map(dimKey).values()){ so4+=g.so4; stock+=g.stock; }
+  if(!so4) return null;
+  const st = stock || fallbackSoh || 0;
+  return st ? st/(so4/4) : null;
+}
+
 /* ---------- monthly aggregation (unchanged logic) ---------- */
 function aggMonthly(rows, dimKey){
   const map = new Map();
@@ -1034,14 +1076,14 @@ function aggMonthly(rows, dimKey){
   }
   return [...map.values()].map(g => ({
     key:g.key, sell_in:g.sell_in, sell_out:g.sell_out, soh:g.soh,
-    woi: g.sell_out ? g.soh/(g.sell_out/13) : null,
+    woi: woi4(dimKey, g.key, g.soh),
     active_cus:g.active.size, total_cus:g.customers.size
   }));
 }
-function ttlMonthly(agg){
+function ttlMonthly(agg, dimKey){
   const t={key:'Total', sell_in:0, sell_out:0, soh:0, active_cus:0, total_cus:0};
   for(const r of agg){ t.sell_in+=r.sell_in; t.sell_out+=r.sell_out; t.soh+=r.soh; t.active_cus+=r.active_cus; t.total_cus+=r.total_cus; }
-  t.woi = t.sell_out ? t.soh/(t.sell_out/13) : null;
+  t.woi = dimKey ? woi4Total(dimKey, t.soh) : null;
   return t;
 }
 function sortAgg(agg, tableId, def){
@@ -1775,7 +1817,7 @@ function renderSkuDetail(){
   const tableId='tblSku', dim=document.querySelector('input[name="skuDim"]:checked').value;
   const agg = aggMonthly(applyFilters(RAW_M,'sku'), dim).filter(r=>r.sell_in||r.sell_out||r.soh);
   sortAgg(agg, tableId, 'sell_in');
-  const ttl = ttlMonthly(agg);
+  const ttl = ttlMonthly(agg, dim);
   const dimLabel = {marketing_sku:'Marketing SKU', cpu_segment:'CPU segment', gpu:'GPU', segment1:'Segment'}[dim];
   const head = `<thead><tr><th data-f="key" class="${onCls(tableId,'key')}">${dimLabel}${arrow(tableId,'key')}</th>
     <th data-f="sell_in" class="${onCls(tableId,'sell_in')}">Sell-in${arrow(tableId,'sell_in')}</th><th data-f="sell_out" class="${onCls(tableId,'sell_out')}">Sell-out${arrow(tableId,'sell_out')}</th>
@@ -2012,6 +2054,7 @@ function renderApplied(){
 
 /* ---------- orchestration ---------- */
 function renderAll(){
+  clearWoi4Cache();
   renderApplied();
   if(currentTab==='detail' && window.MSIDetail) MSIDetail.render();
   if(DT_MKT) rebuildMkt();   // re-slice the IHS grid so the mkt tab + cockpit follow Rep/Channel/Series
@@ -3368,6 +3411,6 @@ initSources();         // data-source health pill + panel (auto-check on load)
 })();
 
 </script>
-<script src="detail.js?v=2"></script>
+<script src="detail.js?v=3"></script>
 </body>
 </html>
