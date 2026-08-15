@@ -579,6 +579,10 @@ body.booted .section:nth-of-type(n+5){transition-delay:.2s;}
   color:var(--ink-3);white-space:nowrap;border-bottom:1px solid var(--rule-2);}
 .dt-tbl td{padding:6px 7px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule);}
 .dt-tbl th.l,.dt-tbl td.l{text-align:left;max-width:210px;overflow:hidden;text-overflow:ellipsis;}
+.dt-tbl th.dt-sort{cursor:pointer;user-select:none;}
+.dt-tbl th.dt-sort:hover{color:var(--ink);background:var(--hover);}
+.dt-tbl th.dt-sort.on{color:var(--msi);}
+.dt-tbl th.dt-sort i{font-style:normal;font-size:8px;margin-left:3px;vertical-align:1px;}
 .dt-tbl th.sep,.dt-tbl td.sep{border-left:1px dashed var(--rule-2);}
 /* Grand total: ghim day box, khong bi cuon mat */
 .dt-tbl tfoot td{position:sticky;bottom:0;z-index:4;background:var(--panel);font-weight:700;color:var(--ink);
@@ -3452,6 +3456,6 @@ initSources();         // data-source health pill + panel (auto-check on load)
 })();
 
 </script>
-<script src="detail.js?v=7"></script>
+<script src="detail.js?v=8"></script>
 </body>
 </html>
