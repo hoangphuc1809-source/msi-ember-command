@@ -30,6 +30,8 @@
     { field: 'cpu_segment',   label: 'CPU Segment',  count: 'cus', weeklyNeedsEnriched: true }
   ];
 
+  var LY = null;        // monthly cung ky NAM TRUOC -> cot S/I YoY
+  var lyState = 'idle';
   var WK = null;        // rows tu v_weekly_enriched (co gpu/cpu_segment)
   var wkState = 'idle'; // idle | loading | ok | fallback
   var topN = 15;
@@ -66,6 +68,36 @@
       if (rows[i].gpu || rows[i].cpu_segment) { wkState = 'ok'; return; }
     }
     wkState = 'fallback';
+  }
+
+  // Keo monthly cung ky nam truoc de tinh S/I YoY. Chi goi 1 lan.
+  async function loadLastYear() {
+    if (lyState !== 'idle') return;
+    lyState = 'loading';
+    try {
+      var periods = (typeof periodsList === 'function') ? periodsList() : [];
+      var all = [];
+      for (var i = 0; i < periods.length; i++) {
+        var ly = 'Y' + (parseInt(String(periods[i].y).replace('Y', ''), 10) - 1);
+        var j = await fetchView('dealers_tracking_monthly', ly, periods[i].q);
+        if (j && j.ok && Array.isArray(j.rows)) all = all.concat(j.rows.map(mapMonthlyRow));
+      }
+      LY = all; lyState = all.length ? 'ok' : 'empty';
+    } catch (e) { console.warn('Khong tai duoc nam truoc:', e && e.message); lyState = 'error'; }
+    render();
+  }
+
+  function lySellIn(field) {
+    var m = {};
+    if (!LY) return m;
+    for (var i = 0; i < LY.length; i++) {
+      var r = LY[i];
+      if (!passes(r, field)) continue;
+      var k = r[field];
+      if (k === null || k === undefined || k === '' || k === '\u2014') k = '(Unassigned)';
+      m[k] = (m[k] || 0) + num(r.sell_in);
+    }
+    return m;
   }
 
   /* ---------- ap filter (dung chung helper cua trang chinh) ---------- */
@@ -113,7 +145,7 @@
       var a = slot(k);
       a.si += num(r.sell_in); a.so += num(r.sell_out);
       if (r.is_soh_month) a.soh += num(r.on_hand);
-      if (r.customer) a.cus[r.customer] = 1;
+      if (r.customer && r.customer_active_flag) a.cus[r.customer] = 1;
       if (r.marketing_sku) a.sku[r.marketing_sku] = 1;
     }
 
@@ -138,6 +170,7 @@
       else if (idx === 2) b.w2 += v; else if (idx === 1) b.w3 += v; else b.w4 += v;
     }
 
+    var lyMap = lySellIn(field);
     var out = [], totSo = 0;
     for (var key in acc) { totSo += acc[key].so; out.push(acc[key]); }
     for (var m = 0; m < out.length; m++) {
@@ -150,6 +183,8 @@
       o.woi = avg4 > 0 ? (stock / avg4) : null;
       o.stock = stock;
       o.wow = o.w2 ? (o.w1 - o.w2) / o.w2 : null;
+      o.siLY = lyMap[o.key] || 0;
+      o.siYoY = o.siLY ? (o.si - o.siLY) / Math.abs(o.siLY) : null;
       o.nCus = Object.keys(o.cus).length;
       o.nSku = Object.keys(o.sku).length;
     }
@@ -194,17 +229,23 @@
         '<td class="sep">' + (dim.count === 'sku' ? r.nSku : r.nCus) + '</td></tr>';
     }
 
-    var t = { so: 0, si: 0, soh: 0, stock: 0, w1: 0, w2: 0, w3: 0, w4: 0 };
+    var t = { so: 0, si: 0, soh: 0, stock: 0, w1: 0, w2: 0, w3: 0, w4: 0, siLY: 0 };
+    var allCus = {}, allSku = {};
     for (var j = 0; j < rows.length; j++) {
       t.so += rows[j].so; t.si += rows[j].si; t.soh += rows[j].soh; t.stock += (rows[j].stock || 0);
       t.w1 += rows[j].w1; t.w2 += rows[j].w2; t.w3 += rows[j].w3; t.w4 += rows[j].w4;
+      t.siLY += (rows[j].siLY || 0);
+      for (var ck in rows[j].cus) allCus[ck] = 1;
+      for (var sk in rows[j].sku) allSku[sk] = 1;
     }
+    var tCount = dim.count === 'sku' ? Object.keys(allSku).length : Object.keys(allCus).length;
+    var tYoY = t.siLY ? (t.si - t.siLY) / Math.abs(t.siLY) : null;
     var tAvg4 = (t.w1 + t.w2 + t.w3 + t.w4) / 4;
     var tWoi = tAvg4 > 0 ? (t.stock / tAvg4) : null;
     h += '</tbody><tfoot><tr><td class="l">Grand total</td><td class="hl">100%</td><td>' + fmt(t.so) + '</td><td>' + fmt(t.si) +
-      '</td><td></td><td>' + fmt(t.soh) + '</td><td>' + (tWoi == null ? '' : tWoi.toFixed(0)) + '</td>' +
+      '</td><td>' + signed(tYoY) + '</td><td>' + fmt(t.soh) + '</td><td>' + (tWoi == null ? '' : tWoi.toFixed(0)) + '</td>' +
       '<td class="sep">' + (noWeekly ? '' : fmt(t.w3)) + '</td><td>' + (noWeekly ? '' : fmt(t.w2)) + '</td><td>' + (noWeekly ? '' : fmt(t.w1)) + '</td>' +
-      '<td>' + (noWeekly ? '' : signed(ratio(t.w1, t.w2))) + '</td><td class="sep"></td></tr></tfoot></table></div></div>';
+      '<td>' + (noWeekly ? '' : signed(ratio(t.w1, t.w2))) + '</td><td class="sep">' + tCount + '</td></tr></tfoot></table></div></div>';
     return h;
   }
 
@@ -236,7 +277,7 @@
   /* ---------- API ra ngoai ---------- */
   window.MSIDetail = {
     render: function(){ probeWeeklySpec(); render(); },
-    init: function () { probeWeeklySpec(); render(); },
+    init: function () { probeWeeklySpec(); render(); loadLastYear(); },
     reloadWeekly: function () { WK = null; probeWeeklySpec(); render(); },
     setTopN: function (n) { topN = n; render(); }
   };
