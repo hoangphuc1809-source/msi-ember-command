@@ -926,6 +926,10 @@ function mapWeeklyRow(r){ return {
   disty:r.disty||'Others', customer:r.customer||'(Unassigned)',
   marketing_sku:r.marketing_sku||'\u2014', series_group:r.series_group||'(Other)', segment1:r.segment1||'\u2014',
   sell_in:toNum(r.sell_in)||0, sell_out:toNum(r.sell_out)||0, on_hand:toNum(r.on_hand)||0,
+  // Spec/geo: co sau khi v_dealers_tracking_weekly duoc nang cap sang fact_weekly_sales_wide.
+  // Truoc do se la undefined -> tab Detail tu chuyen sang che do fallback.
+  cpu_segment:r.cpu_segment, gpu:r.gpu, high_end:r.high_end, price_segment:r.price_segment,
+  province:r.province, vn_region:r.vn_region, srp:toNum(r.srp)||0,
   week_rank_desc:parseInt(r.week_rank_desc,10)||999
 }; }
 
@@ -3364,6 +3368,6 @@ initSources();         // data-source health pill + panel (auto-check on load)
 })();
 
 </script>
-<script src="detail.js?v=1"></script>
+<script src="detail.js?v=2"></script>
 </body>
 </html>
