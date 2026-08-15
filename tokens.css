@@ -1,0 +1,115 @@
+/* tokens.css — MSI Vietnam Dealers Tracking
+ * Hallmark custom theme · anchor: MSI red oklch(50% 0.203 27)
+ * genre: modern-minimal · paper-band: light · display-style: grotesk-sans · accent-hue: warm
+ * Type: Inter Tight (display) · Inter (body) · JetBrains Mono (numerals + chart axes)
+ * The page CSS and the chart engine both reference these by name; no raw values anywhere.
+ */
+
+:root{
+  /* ---- surfaces (LIGHT) — neutrals tinted toward the anchor hue ---- */
+  --paper:oklch(97.2% 0.004 27);
+  --panel:oklch(99.5% 0.002 27);
+  --inset:oklch(95.4% 0.006 27);
+  --ink:oklch(21% 0.014 27);
+  --ink-2:oklch(46% 0.011 27);
+  --ink-3:oklch(53% 0.010 27);
+  --ink-4:oklch(77% 0.007 27);
+  --rule:oklch(92.8% 0.005 27);
+  --rule-2:oklch(87% 0.007 27);
+  --hover:oklch(96.2% 0.007 27);
+  --sel:oklch(95% 0.022 27);
+
+  /* ---- brand ---- */
+  --msi:oklch(50% 0.203 27);
+  --primary:oklch(50% 0.203 27); --primary-2:oklch(42% 0.176 27);
+  --accent:oklch(58% 0.190 30); --accent-2:oklch(66% 0.160 38);
+  --accent-ink:oklch(99% 0.003 27);   /* text on any accent fill — verified ≥ 4.5:1 */
+  --focus:oklch(50% 0.203 27);
+  --on-ink:oklch(99% 0.002 27);       /* text on ink-filled surfaces */
+  --rail-ink:oklch(99% 0.004 27);         /* pure white, rail only (dark surface) */
+
+  /* ---- semantic (docx spec — values locked, kept as tokens) ---- */
+  --pos:#059669; --warn:#D97706; --neg:#CC0000; --info:#0E4D99;
+  /* ---- series groups (docx) ---- */
+  --gaming:#DC2626; --bp:#1D4ED8; --handheld:#7C3AED; --others:#64748B;
+  /* ---- distributors (docx) ---- */
+  --dgw:#F97316; --vsc:#1E3A8A; --spc:#92400E;
+  /* ---- metric mapping (docx) ---- */
+  --col-target:#0E4D99; --col-actual:#1D4ED8; --col-sellout:#059669; --col-soh:#64748B;
+  --col-dgw:#F97316; --col-vsc:#1E3A8A; --col-spc:#64748B;
+  /* ---- WOI / share band inks (docx-adjacent, tokenised) ---- */
+  --ink-pos-deep:oklch(38% 0.090 165);
+  --ink-warn-deep:oklch(40% 0.095  65);
+  --ink-share-deep:oklch(36% 0.085 165);
+
+  /* ---- command rail (always dark) ---- */
+  --sb:oklch(19% 0.010 27); --sb-2:oklch(22% 0.010 27); --sb-3:oklch(26% 0.010 27);
+  --sb-line:oklch(92% 0.020 27 / .09); --sb-line-2:oklch(92% 0.020 27 / .15);
+  --sb-ink:oklch(93% 0.004 27); --sb-ink-2:oklch(70% 0.008 27); --sb-ink-3:oklch(60% 0.008 27);
+  --ember:oklch(58% 0.190 27);
+
+  /* ---- type: 2 + 1 (Inter Tight display · Inter body · JetBrains Mono numerals) ---- */
+  --display:'Inter Tight','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+
+  --t-3xs:9px;  --t-2xs:10px; --t-xs:11px;  --t-sm:12px; --t-base:13px;
+  --t-md:15px;  --t-lg:19px;  --t-xl:24px;  --t-2xl:30px;
+  --lh-tight:1.08; --lh-base:1.5;
+
+  /* ---- 4pt spacing scale ---- */
+  --s-1:4px;  --s-2:8px;  --s-3:12px; --s-4:16px; --s-5:20px;
+  --s-6:24px; --s-7:28px; --s-8:32px; --s-10:40px; --s-12:48px;
+  --pad:24px; --gap:16px; --sbw:236px; --sbw-c:64px;
+
+  /* ---- radius scale (5 steps, no improvisation) ---- */
+  --r-2xs:2px; --r-xs:4px; --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  --radius:10px;                      /* legacy alias — now on the scale */
+
+  /* ---- elevation: reserved for genuinely floating surfaces only ---- */
+  --elev-pop:0 2px 6px oklch(21% 0.014 27 / .07), 0 10px 28px oklch(21% 0.014 27 / .10);
+  --elev-modal:0 4px 12px oklch(21% 0.014 27 / .10), 0 24px 64px oklch(21% 0.014 27 / .16);
+  --shadow-3d:none;                   /* legacy aliases — panels are flat now */
+  --shadow-3d-hover:var(--elev-pop);
+  --ring:none;
+
+  /* ---- motion: three named easings, no overshoot ---- */
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --ease-in:cubic-bezier(.4,0,1,1);
+  --ease-in-out:cubic-bezier(.4,0,.2,1);
+  --dur-1:120ms; --dur-2:180ms; --dur-3:280ms;
+
+  --ctl-h:32px;                        /* one control height for the whole filter bar */
+}
+
+[data-theme="dark"]{
+  --paper:oklch(15% 0.010 27);
+  --panel:oklch(18.5% 0.011 27);
+  --inset:oklch(22% 0.011 27);
+  --ink:oklch(94% 0.006 27);
+  --ink-2:oklch(74% 0.010 27);
+  --ink-3:oklch(64% 0.010 27);
+  --ink-4:oklch(42% 0.010 27);
+  --rule:oklch(26% 0.010 27);
+  --rule-2:oklch(32% 0.011 27);
+  --hover:oklch(23% 0.012 27);
+  --sel:oklch(28% 0.040 27);
+
+  --msi:oklch(64% 0.170 27); --primary:oklch(64% 0.170 27); --primary-2:oklch(54% 0.180 27);
+  --accent:oklch(70% 0.150 32); --accent-2:oklch(76% 0.130 40);
+  --accent-ink:oklch(16% 0.014 27);
+  --focus:oklch(70% 0.160 27);
+  --on-ink:oklch(16% 0.012 27);
+
+  --pos:#34D399; --warn:#FBBF24; --neg:#F04A4A; --info:#60A5FA;
+  --gaming:#F87171; --bp:#60A5FA; --handheld:#A78BFA; --others:#93A0B5;
+  --dgw:#FB923C; --vsc:#6591E0; --spc:#C08457;
+  --col-target:#60A5FA; --col-actual:#6591E0; --col-sellout:#34D399; --col-soh:#93A0B5;
+  --col-dgw:#FB923C; --col-vsc:#6591E0; --col-spc:#93A0B5;
+  --ink-pos-deep:oklch(84% 0.110 165);
+  --ink-warn-deep:oklch(86% 0.130  85);
+  --ink-share-deep:oklch(86% 0.100 165);
+
+  --elev-pop:0 2px 8px oklch(8% 0.012 27 / .45), 0 12px 32px oklch(8% 0.012 27 / .50);
+  --elev-modal:0 6px 18px oklch(8% 0.012 27 / .55), 0 30px 70px oklch(8% 0.012 27 / .60);
+}
