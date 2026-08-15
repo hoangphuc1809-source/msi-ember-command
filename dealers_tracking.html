@@ -569,23 +569,28 @@ body.booted .section:nth-of-type(n+5){transition-delay:.2s;}
 .src-foot b{color:var(--ink-2);}
 
 /* ---------- Dealers Detail ---------- */
-.dt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:14px;}
-.dt-card{border:1px solid var(--line);border-radius:10px;background:var(--card);overflow:hidden;}
-.dt-h{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;}
+.dt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:16px;}
+.dt-card{border:1px solid var(--rule-2);border-radius:12px;background:var(--panel);overflow:hidden;box-shadow:var(--shadow-3d);}
+.dt-h{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--rule-2);font-size:12px;color:var(--ink-2);background:var(--panel);}
+.dt-h b{color:var(--ink);font-weight:700;}
 .dt-scroll{max-height:340px;overflow:auto;}
-.dt-tbl{width:100%;border-collapse:collapse;font-size:11px;}
-.dt-tbl th{position:sticky;top:0;background:var(--card);z-index:1;padding:6px 7px;text-align:right;font-weight:600;color:var(--ink-3);white-space:nowrap;border-bottom:1px solid var(--line);}
-.dt-tbl td{padding:5px 7px;text-align:right;white-space:nowrap;border-bottom:1px solid rgba(128,128,128,.12);}
+.dt-tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;color:var(--ink);}
+.dt-tbl th{position:sticky;top:0;z-index:3;background:var(--panel);padding:7px;text-align:right;font-weight:600;
+  color:var(--ink-3);white-space:nowrap;border-bottom:1px solid var(--rule-2);}
+.dt-tbl td{padding:6px 7px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule);}
 .dt-tbl th.l,.dt-tbl td.l{text-align:left;max-width:210px;overflow:hidden;text-overflow:ellipsis;}
-.dt-tbl th.sep,.dt-tbl td.sep{border-left:1px dashed var(--line);}
-.dt-tbl tfoot td{font-weight:700;border-top:1px solid var(--line);}
+.dt-tbl th.sep,.dt-tbl td.sep{border-left:1px dashed var(--rule-2);}
+/* Grand total: ghim day box, khong bi cuon mat */
+.dt-tbl tfoot td{position:sticky;bottom:0;z-index:4;background:var(--panel);font-weight:700;color:var(--ink);
+  border-top:2px solid var(--rule-2);border-bottom:none;box-shadow:0 -2px 6px rgba(15,23,42,.06);}
 .dt-row{cursor:pointer;}
-.dt-row:hover{background:rgba(128,128,128,.09);}
-.dt-row.on{background:rgba(204,0,0,.10);box-shadow:inset 2px 0 0 var(--msi);}
+.dt-row:hover td{background:var(--hover);}
+.dt-row.on td{background:var(--sel);}
+.dt-row.on td.l{box-shadow:inset 3px 0 0 var(--msi);}
 .dt-row.dim{opacity:.42;}
 .dt-tbl td.hl{font-weight:600;}
-.dt-pos{color:var(--pos);} .dt-neg{color:var(--neg);} .dt-mut{color:var(--ink-4);}
-.dt-warn{color:var(--warn,#D97706);font-size:10px;}
+.dt-pos{color:var(--pos);} .dt-neg{color:var(--neg);} .dt-mut{color:var(--ink-3);}
+.dt-warn{color:var(--warn);font-size:10px;}
 </style>
 </head>
 <body>
@@ -3447,6 +3452,6 @@ initSources();         // data-source health pill + panel (auto-check on load)
 })();
 
 </script>
-<script src="detail.js?v=6"></script>
+<script src="detail.js?v=7"></script>
 </body>
 </html>
