@@ -2033,7 +2033,10 @@ function renderCharts(){
   if($('siHeroNow')) $('siHeroNow').textContent = last ? Math.round(last.cumSI).toLocaleString('en-US') : '';
   cumulativeChart('chartSellinHero', cum, '--vsc');
 }
-function renderAllWeekly(){ renderCharts(); if(tgtLoaded||RAW_M.length) renderPacing(); if(currentTab==='dealers') renderDrill(); }
+function renderAllWeekly(){ renderCharts(); if(tgtLoaded||RAW_M.length) renderPacing(); if(currentTab==='dealers') renderDrill();
+  // WOI can RAW_W; cockpit da ve truoc khi weekly ve nen phai ve lai 1 lan.
+  if(!renderAllWeekly._done && RAW_W.length){ renderAllWeekly._done = true; clearWoi4Cache(); renderAll(); }
+}
 
 /* ---------- filter dropdowns (distinct real values from the monthly feed) ---------- */
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
