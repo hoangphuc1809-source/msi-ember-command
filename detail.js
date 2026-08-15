@@ -56,26 +56,16 @@
     return (typeof RAW_W !== 'undefined' && Array.isArray(RAW_W)) ? RAW_W : [];
   }
 
-  async function loadEnrichedWeekly() {
-    if (wkState === 'loading' || wkState === 'ok') return;
-    wkState = 'loading';
-    try {
-      var periods = (typeof periodsList === 'function') ? periodsList() : [];
-      var all = [];
-      for (var i = 0; i < periods.length; i++) {
-        var j = await fetchView('v_weekly_enriched', periods[i].y, periods[i].q);
-        if (j && j.ok && Array.isArray(j.rows)) all = all.concat(j.rows);
-      }
-      if (all.length) {
-        // view giu ten cu year_label/week_label nen dung thang duoc
-        WK = all;
-        wkState = 'ok';
-      } else { wkState = 'fallback'; }
-    } catch (e) {
-      console.warn('v_weekly_enriched chua san sang, dung RAW_W:', e && e.message);
-      wkState = 'fallback';
+  // Khong fetch view rieng nua: v_dealers_tracking_weekly da duoc nang cap tai cho
+  // nen RAW_W (trang chinh da tai san) mang luon gpu/cpu_segment. Chi can do xem
+  // du lieu da co spec chua de bat/tat cot tuan cho 2 bang GPU va CPU Segment.
+  function probeWeeklySpec() {
+    var rows = (typeof RAW_W !== 'undefined' && Array.isArray(RAW_W)) ? RAW_W : [];
+    if (!rows.length) { wkState = 'idle'; return; }
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].gpu || rows[i].cpu_segment) { wkState = 'ok'; return; }
     }
-    render();
+    wkState = 'fallback';
   }
 
   /* ---------- ap filter (dung chung helper cua trang chinh) ---------- */
@@ -231,15 +221,15 @@
     if (st) {
       st.innerHTML = wkState === 'ok'
         ? '<b style="color:var(--pos)">weekly live</b> · v_weekly_enriched'
-        : (wkState === 'loading' ? 'đang tải weekly…' : '<span class="dt-warn">weekly fallback</span> · chạy runFullDataRefreshV2 để bật GPU/CPU theo tuần');
+        : (wkState === 'idle' ? 'chưa có dữ liệu tuần' : '<span class="dt-warn">weekly fallback</span> · chờ trigger nâng cấp view (tối đa ~60 phút)');
     }
   }
 
   /* ---------- API ra ngoai ---------- */
   window.MSIDetail = {
-    render: render,
-    init: function () { render(); loadEnrichedWeekly(); },
-    reloadWeekly: function () { wkState = 'idle'; WK = null; loadEnrichedWeekly(); },
+    render: function(){ probeWeeklySpec(); render(); },
+    init: function () { probeWeeklySpec(); render(); },
+    reloadWeekly: function () { WK = null; probeWeeklySpec(); render(); },
     setTopN: function (n) { topN = n; render(); }
   };
 })();
