@@ -1060,14 +1060,14 @@ function woi4Map(dimKey){
   const m = new Map();
   const src = (typeof RAW_W!=='undefined' && Array.isArray(RAW_W)) ? RAW_W : [];
   const rows = (typeof applyFilters==='function') ? applyFilters(src, dimKey) : src;
-  if(!rows.length){ _woi4Cache[dimKey]=m; return m; }
+  if(!rows.length) return m;
   // Bo tuan dang chay (chua co sell-out) khoi mau so, neu khong WOI bi thoi phong.
   const wtot = {};
   for(const r of rows){ if(r.week_label) wtot[r.week_label] = (wtot[r.week_label]||0) + (r.sell_out||0); }
   const wks = Object.keys(wtot).filter(k=>wtot[k]>0).sort();
   const last4 = wks.slice(-4);
   const latest = last4[last4.length-1];
-  if(!last4.length){ _woi4Cache[dimKey]=m; return m; }
+  if(!last4.length) return m;
   for(const r of rows){
     if(!last4.includes(r.week_label)) continue;
     const k = r[dimKey];
@@ -1077,7 +1077,7 @@ function woi4Map(dimKey){
     g.so4 += (r.sell_out||0);
     if(r.week_label===latest) g.stock += (r.on_hand||0);
   }
-  _woi4Cache[dimKey]=m;
+  if(m.size) _woi4Cache[dimKey]=m;
   return m;
 }
 function woi4(dimKey, key, fallbackSoh){
