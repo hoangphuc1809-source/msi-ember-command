@@ -1032,7 +1032,10 @@ function woi4Map(dimKey){
   const m = new Map();
   const rows = (typeof RAW_W!=='undefined' && Array.isArray(RAW_W)) ? RAW_W : [];
   if(!rows.length){ _woi4Cache[dimKey]=m; return m; }
-  const wks = [...new Set(rows.map(r=>r.week_label).filter(Boolean))].sort();
+  // Bo tuan dang chay (chua co sell-out) khoi mau so, neu khong WOI bi thoi phong.
+  const wtot = {};
+  for(const r of rows){ if(r.week_label) wtot[r.week_label] = (wtot[r.week_label]||0) + (r.sell_out||0); }
+  const wks = Object.keys(wtot).filter(k=>wtot[k]>0).sort();
   const last4 = wks.slice(-4);
   const latest = last4[last4.length-1];
   if(!last4.length){ _woi4Cache[dimKey]=m; return m; }
@@ -3411,6 +3414,6 @@ initSources();         // data-source health pill + panel (auto-check on load)
 })();
 
 </script>
-<script src="detail.js?v=3"></script>
+<script src="detail.js?v=4"></script>
 </body>
 </html>
