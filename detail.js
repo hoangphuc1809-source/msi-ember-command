@@ -86,10 +86,18 @@
 
   /* ---------- tong hop ---------- */
 
+  // Chi lay cac tuan DA CO SO BAN. Tuan hien tai (dang chay) co dong nhung
+  // sell_out = 0 -> neu tinh vao thi WoW luon ra -100% va WOI bi thoi phong
+  // (mau so bi chia them mot tuan rong).
   function weekKeys() {
-    var rows = weeklyRows(), s = {};
-    for (var i = 0; i < rows.length; i++) { var w = rows[i].week_label || rows[i].week; if (w) s[w] = 1; }
-    return Object.keys(s).sort();
+    var rows = weeklyRows(), tot = {};
+    for (var i = 0; i < rows.length; i++) {
+      var w = rows[i].week_label || rows[i].week;
+      if (w) tot[w] = (tot[w] || 0) + num(rows[i].sell_out);
+    }
+    var out = [];
+    for (var k in tot) { if (tot[k] > 0) out.push(k); }
+    return out.sort();
   }
 
   function build(field) {
