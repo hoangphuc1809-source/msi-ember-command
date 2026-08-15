@@ -572,17 +572,53 @@ body.booted .section:nth-of-type(n+5){transition-delay:.2s;}
 .dt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:16px;}
 .dt-card{border:1px solid var(--rule-2);border-radius:12px;background:var(--panel);overflow:hidden;box-shadow:var(--shadow-3d);}
 .dt-h{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--rule-2);font-size:12px;color:var(--ink-2);background:var(--panel);}
-.dt-h b{color:var(--ink);font-weight:700;}
+.dt-h b{color:var(--ink);font-weight:700;letter-spacing:.01em;}
 .dt-scroll{max-height:340px;overflow:auto;}
-.dt-tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;color:var(--ink);}
-.dt-tbl th{position:sticky;top:0;z-index:3;background:var(--panel);padding:7px;text-align:right;font-weight:600;
+.dt-tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;color:var(--ink);
+  font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+
+/* QUY TAC CAN LE: so va % can GIUA, chu can TRAI.
+   Ap dung dong bo cho thead, tbody va tfoot. */
+.dt-tbl th,.dt-tbl td{text-align:center;}
+.dt-tbl th.l,.dt-tbl td.l{text-align:left;}
+
+.dt-tbl th{position:sticky;top:0;z-index:3;background:var(--panel);padding:8px 7px;
+  font-weight:600;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;
   color:var(--ink-3);white-space:nowrap;border-bottom:1px solid var(--rule-2);}
-.dt-tbl td{padding:6px 7px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule);}
-.dt-tbl th.l,.dt-tbl td.l{text-align:left;max-width:210px;overflow:hidden;text-overflow:ellipsis;}
+.dt-tbl td{padding:6px 7px;white-space:nowrap;border-bottom:1px solid var(--rule);}
+.dt-tbl td.l{max-width:210px;overflow:hidden;text-overflow:ellipsis;color:var(--ink-2);font-weight:500;}
+.dt-tbl th.sep,.dt-tbl td.sep{border-left:1px dashed var(--rule-2);}
+
+/* Grand total ghim day box */
+.dt-tbl tfoot td{position:sticky;bottom:0;z-index:4;background:var(--panel);font-weight:700;color:var(--ink);
+  border-top:2px solid var(--rule-2);border-bottom:none;box-shadow:0 -2px 6px rgba(15,23,42,.06);}
+.dt-tbl tfoot td.l{color:var(--ink);font-weight:700;}
+
+/* S/O shared - nen xanh dam dan theo ty trong */
+.dt-share{display:inline-block;min-width:52px;padding:2px 7px;border-radius:5px;
+  font-weight:600;color:var(--ink);}
+.dt-share.str{color:#04543A;font-weight:700;}
+/* WOI - thap la tot, cao la hang nam lau */
+.dt-woi{display:inline-block;min-width:34px;padding:2px 7px;border-radius:5px;font-weight:600;}
+.wb-low{background:rgba(204,0,0,.12);color:var(--neg);}
+.wb-ok{background:rgba(5,150,105,.14);color:#04624A;}
+.wb-warn{background:rgba(217,119,6,.15);color:#8A4B04;}
+.wb-bad{background:rgba(204,0,0,.13);color:var(--neg);}
+
+.dt-row{cursor:pointer;}
+.dt-row:hover td{background:var(--hover);}
+.dt-row.on td{background:var(--sel);}
+.dt-row.on td.l{box-shadow:inset 3px 0 0 var(--msi);color:var(--ink);font-weight:700;}
+.dt-row.dim{opacity:.42;}
+.dt-pos{color:var(--pos);font-weight:600;} .dt-neg{color:var(--neg);font-weight:600;} .dt-mut{color:var(--ink-4);}
+.dt-warn{color:var(--warn);font-size:10px;}
 .dt-tbl th.dt-sort{cursor:pointer;user-select:none;}
 .dt-tbl th.dt-sort:hover{color:var(--ink);background:var(--hover);}
 .dt-tbl th.dt-sort.on{color:var(--msi);}
 .dt-tbl th.dt-sort i{font-style:normal;font-size:8px;margin-left:3px;vertical-align:1px;}
+[data-theme="dark"] .dt-share.str{color:#8CE0C0;}
+[data-theme="dark"] .wb-ok{color:#6EE7B7;}
+[data-theme="dark"] .wb-warn{color:#FCD34D;}
 .dt-tbl th.sep,.dt-tbl td.sep{border-left:1px dashed var(--rule-2);}
 /* Grand total: ghim day box, khong bi cuon mat */
 .dt-tbl tfoot td{position:sticky;bottom:0;z-index:4;background:var(--panel);font-weight:700;color:var(--ink);
@@ -3456,6 +3492,6 @@ initSources();         // data-source health pill + panel (auto-check on load)
 })();
 
 </script>
-<script src="detail.js?v=8"></script>
+<script src="detail.js?v=9"></script>
 </body>
 </html>
