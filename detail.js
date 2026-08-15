@@ -35,6 +35,35 @@
   var WK = null;        // rows tu v_weekly_enriched (co gpu/cpu_segment)
   var wkState = 'idle'; // idle | loading | ok | fallback
   var topN = 15;
+  var sortState = {};   // { <dim.field>: {f:'so', dir:'desc'} }
+
+  // Cot nao sort theo gia tri gi. 'cnt' tuy bang la so dealer hay so SKU.
+  function sortVal(r, f, dim) {
+    if (f === 'key') return String(r.key || '').toLowerCase();
+    if (f === 'cnt') return dim.count === 'sku' ? r.nSku : r.nCus;
+    return r[f];
+  }
+  function sortRows(rows, dim) {
+    var st = sortState[dim.field] || (sortState[dim.field] = { f: 'so', dir: 'desc' });
+    var mul = st.dir === 'asc' ? 1 : -1;
+    rows.sort(function (a, b) {
+      var x = sortVal(a, st.f, dim), y = sortVal(b, st.f, dim);
+      // rong/null luon xuong duoi, bat ke chieu sort
+      var xe = (x === null || x === undefined || x === ''), ye = (y === null || y === undefined || y === '');
+      if (xe && ye) return 0;
+      if (xe) return 1;
+      if (ye) return -1;
+      if (typeof x === 'string' || typeof y === 'string') return String(x).localeCompare(String(y)) * mul;
+      return (x - y) * mul;
+    });
+    return st;
+  }
+  function th(dimField, f, label, cls) {
+    var st = sortState[dimField] || { f: 'so', dir: 'desc' };
+    var on = st.f === f;
+    return '<th class="dt-sort' + (cls ? ' ' + cls : '') + (on ? ' on' : '') + '" data-sf="' + f + '" data-sd="' + dimField + '">' +
+      label + (on ? '<i>' + (st.dir === 'asc' ? '\u25b2' : '\u25bc') + '</i>' : '') + '</th>';
+  }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
   function num(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
@@ -200,7 +229,6 @@
       o.nCus = Object.keys(o.cus).length;
       o.nSku = Object.keys(o.sku).length;
     }
-    out.sort(function (a, b) { return b.so - a.so; });
     return { rows: out, totSo: totSo, weeks: last };
   }
 
@@ -209,6 +237,7 @@
   function tableHtml(dim) {
     var d = build(dim.field);
     var wk = d.weeks, rows = d.rows;
+    sortRows(rows, dim);
     var shown = rows.slice(0, topN);
     var cntLbl = dim.count === 'sku' ? 'SKUs' : 'Active Cus.';
     var noWeekly = dim.weeklyNeedsEnriched && wkState !== 'ok';
@@ -216,11 +245,12 @@
     var h = '<div class="dt-card"><div class="dt-h"><b>' + esc(dim.label) + '</b>';
     if (noWeekly) h += '<span class="dt-warn">cột tuần cần v_weekly_enriched</span>';
     if (rows.length > topN) h += '<span class="dt-mut">top ' + topN + '/' + rows.length + '</span>';
+    var F = dim.field;
     h += '</div><div class="dt-scroll"><table class="dt-tbl"><thead><tr>' +
-      '<th class="l">' + esc(dim.label) + '</th><th>S/O shared</th><th>Sell Out</th><th>Sell In</th>' +
-      '<th>S/I YoY</th><th>Dealers SOH</th><th>WOI</th>' +
-      '<th class="sep">' + (wk[1] || 'S/O L3') + '</th><th>' + (wk[2] || 'S/O L2') + '</th><th>' + (wk[3] || 'S/O LW') + '</th>' +
-      '<th>WoW</th><th class="sep">' + cntLbl + '</th></tr></thead><tbody>';
+      th(F, 'key', esc(dim.label), 'l') + th(F, 'share', 'S/O shared') + th(F, 'so', 'Sell Out') + th(F, 'si', 'Sell In') +
+      th(F, 'siYoY', 'S/I YoY') + th(F, 'soh', 'Dealers SOH') + th(F, 'woi', 'WOI') +
+      th(F, 'w3', wk[1] || 'S/O L3', 'sep') + th(F, 'w2', wk[2] || 'S/O L2') + th(F, 'w1', wk[3] || 'S/O LW') +
+      th(F, 'wow', 'WoW') + th(F, 'cnt', cntLbl, 'sep') + '</tr></thead><tbody>';
 
     for (var i = 0; i < shown.length; i++) {
       var r = shown[i];
@@ -267,6 +297,16 @@
     var html = '';
     for (var i = 0; i < DIMS.length; i++) html += tableHtml(DIMS[i]);
     root.innerHTML = html;
+
+    root.querySelectorAll('th.dt-sort').forEach(function (h) {
+      h.addEventListener('click', function () {
+        var f = h.dataset.sf, dimField = h.dataset.sd;
+        var st = sortState[dimField] || (sortState[dimField] = { f: 'so', dir: 'desc' });
+        if (st.f === f) { st.dir = st.dir === 'asc' ? 'desc' : 'asc'; }
+        else { st.f = f; st.dir = (f === 'key') ? 'asc' : 'desc'; }
+        render();
+      });
+    });
 
     root.querySelectorAll('tr.dt-row').forEach(function (tr) {
       tr.addEventListener('click', function () {
